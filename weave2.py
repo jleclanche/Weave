@@ -17,6 +17,7 @@ from ptrace.debugger.debugger import PtraceDebugger
 
 import nids
 import hmac
+import os
 
 import opcodes
 
@@ -366,6 +367,19 @@ class Sniffer(object):
 		self.dbg.deleteProcess(pid)
 		del self.processes[pid]
 
+def findWowProcess():
+	for entry in os.listdir("/proc"):
+		if not entry.isdigit(): continue
+		
+		try:
+			with open("/proc/%s/cmdline" % entry, "r") as cmdline_file:
+				cmdline = cmdline_file.read().lower()
+		except:
+			continue
+		
+		if cmdline.startswith("wow.exe"):
+			return int(entry)
+
 def main():
 	from optparse import OptionParser
 	parser = OptionParser()
@@ -379,6 +393,7 @@ def main():
 	nids.param("scan_num_hosts", 0) # Disable portscan detection
 	
 	sniff = Sniffer()
+	sniff.starttime = datetime.now()
 	
 	def timestring():
 		td = datetime.now() - sniff.starttime
@@ -402,13 +417,23 @@ def main():
 		nids.param("device", options.device)
 	if options.file:
 		nids.param("filename", options.file)
-	if options.pid:
-		sniff.addProcess(int(options.pid))
+	
+	pid = None
+	
+	if options.pid is not None and options.pid.isdigit():
+		pid = int(options.pid)
+	elif options.pid == "auto":
+		pid = findWowProcess()
+	
+	if pid:
+		print timestring(), "Attaching to process", pid
+		sniff.addProcess(pid)
+	elif not options.file:
+		print timestring(), "Warning: Not attaching to any process"
 	
 	nids.init()
 	nids.register_tcp(sniff.tcp_handler)
 	
-	sniff.starttime = datetime.now()
 	nids.run()
 
 if __name__ == "__main__":
