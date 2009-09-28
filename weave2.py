@@ -16,11 +16,14 @@ from signal import SIGSTOP, SIGCONT
 from ptrace.debugger.debugger import PtraceDebugger
 from ptrace.error import PtraceError
 
+from utils import *
+
 import nids
 import hmac
 import os
 
 import opcodes
+import log
 
 def findKey(process, A, searchBlockSize=65536):
 	"""Given the public value of A, find the session key K in memory.
@@ -49,10 +52,6 @@ def findKey(process, A, searchBlockSize=65536):
 			process.cont()
 		except PtraceError:
 			pass
-
-def readstring(data, offset=0):
-	"""Read a null-terminated string."""
-	return data[offset:data.find(chr(0), offset)]
 
 class Session(object):
 	"""Stores information about a logged-in user, such as client information and session key."""
@@ -391,11 +390,14 @@ def main():
 	
 	parser.add_option("-d", "--device", dest="device", help="sniff on network device DEVICE", metavar="DEVICE")
 	parser.add_option("-f", "--file", dest="file", help="use pcap logfile FILE", metavar="FILE")
+	parser.add_option("-l", "--log", dest="log", action="store_true", default=False, help="create logs")
 	parser.add_option("-p", "--pid", dest="pid", help="attach to process PID", metavar="PID")
 	
 	(options, args) = parser.parse_args()
 	
 	nids.param("scan_num_hosts", 0) # Disable portscan detection
+	
+	logfiles = {}
 	
 	sniff = Sniffer()
 	sniff.starttime = datetime.now()
@@ -405,6 +407,40 @@ def main():
 		return "[% 8.3f]" % (td.seconds + td.microseconds/1000000.0)
 	
 	def message_output_handler(message):
+		if options.log:
+			connection = message.source.connection
+			
+			if connection.session:
+				if connection in logfiles:
+					logfile = logfiles[connection]
+				else:
+					logname = "%s_%s.wlog" % (connection.session.account, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+					
+					print timestring(), 'Creating log file "%s"' % logname
+					logfile = log.Log(open(logname, "wb"))
+					logfile.write_header()
+					
+					session = connection.session
+					sinfo = log.SessionInfo(session.game, session.version, session.locale, connection.client.address, connection.server.address, session.account)
+					
+					logfile.write(sinfo)
+					
+					logfiles[connection] = logfile
+				
+				if message.source is connection.client:
+					cls = log.ClientMessage
+				elif message.source is connection.server:
+					cls = log.ServerMessage
+				else:
+					cls = None
+				
+				if cls:
+					logfile.write(cls(message.opcode, connection.client.address, connection.server.address, message.data))
+			else:
+				# FIXME: This always discards the first message (SMSG_AUTH_CHALLENGE) because at that point,
+				# the session is not yet known. We should cache this message and output it too.
+				pass
+			
 		print timestring(), opcodes.names[message.opcode].ljust(55),
 		
 		if len(message.data) > 0:
