@@ -14,6 +14,7 @@ from Crypto.Cipher import ARC4
 
 from signal import SIGSTOP, SIGCONT
 from ptrace.debugger.debugger import PtraceDebugger
+from ptrace.error import PtraceError
 
 import nids
 import hmac
@@ -44,6 +45,10 @@ def findKey(process, A, searchBlockSize=65536):
 					return K
 	finally:
 		process.kill(SIGCONT)
+		try:
+			process.cont()
+		except PtraceError:
+			pass
 
 def readstring(data, offset=0):
 	"""Read a null-terminated string."""
