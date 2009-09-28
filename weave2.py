@@ -25,6 +25,9 @@ import os
 import opcodes
 import log
 
+from events import stream
+
+
 def findKey(process, A, searchBlockSize=65536):
 	"""Given the public value of A, find the session key K in memory.
 	
@@ -322,6 +325,7 @@ class RealmConnection(Connection):
 		
 		if self.sniffer:
 			# Dispatch the message to our sniffer's message handler.
+			stream.fire(opcodes.names[message.opcode], message)
 			self.sniffer.message_handler(message)
 
 class Sniffer(object):
@@ -381,7 +385,7 @@ def findWowProcess():
 		except:
 			continue
 		
-		if cmdline.startswith("wow.exe"):
+		if cmdline.startswith("wow"):
 			return int(entry)
 
 def main():
