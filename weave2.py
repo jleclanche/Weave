@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#encoding: utf-8
+# -*- coding: utf-8 -*-
 
 PORT = 3724
 
