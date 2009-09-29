@@ -12,14 +12,11 @@ class Stream(object):
 		self.handlers.append(handle)
 	
 	def fire(self, evt, msg):
-		print self.handlers, "Do we even have any handler?"
 		for handle in self.handlers:
-			print handle, self.handlers
 			handle.fire(evt, msg)
 
 class Handler(object):
 	def fire(self, evt, msg):
-		print "IM FIRING MY LAZAH %r" % evt
 		if hasattr(self, evt):
 			getattr(self, evt)(msg)
 
