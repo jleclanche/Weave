@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-PORT = 3724
+PORTS = [1119, 3724]
 
 from binascii import hexlify, unhexlify
 from datetime import datetime
@@ -172,6 +172,9 @@ class Connection(object):
 		self._sniffer = ref(sniffer)
 		self.client = Client(self, tcp.addr[0], tcp.server)
 		self.server = Server(self, tcp.addr[1], tcp.client)
+		
+		if tcp.addr[1][1] == 1119:
+			self.transform(BNetConnection)
 	
 	@property
 	def sniffer(self):
@@ -197,6 +200,13 @@ class Connection(object):
 	
 	def __repr__(self):
 		return "<%s between %r and %r>" % (self.__class__.__name__, self.client, self.server)
+
+class BNetConnection(Connection):
+	def __transform_init__(self):
+		pass
+	
+	def handle_data(self, source, data):
+		pass
 
 class AuthConnection(Connection):
 	logon_challenge = Struct("<BH4s3BH4s4s4s2LB")
@@ -341,7 +351,7 @@ class Sniffer(object):
 		self.dbg.quit()
 	
 	def tcp_handler(self, tcp):	
-		if tcp.nids_state == nids.NIDS_JUST_EST and tcp.addr[1][1] == PORT:
+		if tcp.nids_state == nids.NIDS_JUST_EST and tcp.addr[1][1] in PORTS:
 			self.connections[tcp.addr] = Connection(self, tcp)
 		elif tcp.nids_state == nids.NIDS_DATA:
 			if tcp.addr not in self.connections:
