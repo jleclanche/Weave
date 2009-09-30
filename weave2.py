@@ -189,6 +189,7 @@ class Connection(object):
 		
 		if tcp.addr[1][1] == 1119:
 			self.transform(BNetConnection)
+			print "Transformed into %r\n" % (self)
 	
 	@property
 	def sniffer(self):
@@ -220,7 +221,47 @@ class BNetConnection(Connection):
 		pass
 	
 	def handle_data(self, source, data):
-		pass
+		if isinstance(source, Server):
+			opcode = data[:2]
+			print "<SERVER>",
+		else:
+			print "<CLIENT>",
+			opcode = data[:4]
+		if opcode == "@\x01":
+			if isinstance(source, Client):
+				print "Ping!"
+			else:
+				print "Pong!"
+		elif opcode == "@\x00\n\xed":
+			email = data[112:]
+			print "New Battle.net connection by <%s>" % (email) # Default realm is not here
+		elif opcode == 'B\x08\xa1\x02':
+			print "<Encrypted>" # Contains default realm?
+		elif opcode == 'B\x10':
+			print "<Encrypted>" # proof?
+		elif opcode == "@\x28":
+			print "You shall not pass!"
+		elif opcode == "@B":
+			print "Success!"
+		elif opcode == "B\x08":
+			print "Connection refused: Invalid e-mail"
+		elif opcode[:2] == "D\x02":
+			server = data[2:4]
+			server = unpack("H", server)[0] # WRONG
+			print "Connect me to a new server: %r" % data
+		elif opcode == "@\x10":
+			header, _, region = unpack("<4s2s2s", data[2:10])
+			_ = data[10:43] # 33 bytes
+			_ = data[43:55] # 12 constant bytes
+			_ = data[55:57] # 2 bytes
+			print "Welcome on Battle.net %s, Jerome Leclanche (MACPASSION)" % (region)
+		elif opcode == "B\x02":
+			print "Retrieving realm list"
+		elif len(data) != 1442:
+			print "Discarded %i bytes from %r with opcode %r" % (len(data), source, opcode)
+		else:
+			print "1442 bytes more..."
+#		print hexdump(data)
 
 class AuthConnection(Connection):
 	logon_challenge = Struct("<BH4s3BH4s4s4s2LB")
