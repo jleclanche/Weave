@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from struct import unpack
+from struct import unpack, calcsize
 
 def readGUID(buf):
 	guid_zeroes, = unpack("<B", buf.read(1))
@@ -33,6 +33,9 @@ def readstring(buf, offset=0, encoding=None):
 		
 		tmp += c
 		index = index + 1
+
+def unpack_buffer(buf, fmt):
+	return unpack(fmt, buf.read(calcsize(fmt)))
 
 def hexdump(src, length=16):
 	result = []
