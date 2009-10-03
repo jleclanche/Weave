@@ -1,4 +1,5 @@
 from __future__ import with_statement
+import os.path
 
 class _nameclass(dict):
 	def __getitem__(self, item):
@@ -12,7 +13,9 @@ names = _nameclass()
 try:
 	import re
 
-	with open("Opcodes.h", "r") as opcode_file:
+	opcodes_filename = os.path.join(os.path.dirname(__file__), "Opcodes.h")
+	
+	with open(opcodes_filename, "r") as opcode_file:
 		opcode_contents = opcode_file.read()
 
 	for match in re.finditer(r"\s+([^\s]+)\s*=\s*(0x.+?)\s*,", opcode_contents):
