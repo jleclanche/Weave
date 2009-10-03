@@ -126,31 +126,45 @@ class BaseHeader(object):
 	length_struct = Struct(">H")
 	
 	def __init__(self, data):
-		self._data = data[:self.size]
+		self._data = data[:self.base_size]
 
 	def __repr__(self):
 		return "<Header '%s': Length = %d, Opcode = 0x%X>" % (hexlify(self._data), self.content_length, self.opcode)
 	
 	@property
 	def content_length(self):
-		return self.length_struct.unpack_from(self._data)[0] - self.opcode_struct.size
+		length = self.length_struct.unpack_from(self._data, self.size - self.length_struct.size - self.opcode_struct.size)[0] - self.opcode_struct.size
+		if self.is_large:
+			length |= (ord(self._data[0]) ^ 0x80) << 16
+		return length
 	
 	@property
 	def opcode(self):
-		return self.opcode_struct.unpack_from(self._data, self.length_struct.size)[0]
+		return self.opcode_struct.unpack_from(self._data, self.size - self.opcode_struct.size)[0]
+	
+	@property
+	def is_large(self):
+		return ord(self._data[0]) & 0x80
+	
+	@property
+	def size(self):
+		if self.is_large:
+			return self.base_size + 1
+		else:
+			return self.base_size
 
 class Client(Peer):
 	hmac_key = unhexlify("F4663159FC836E31310251D544316798")
 	
 	class Header(BaseHeader):
-		size = 6
+		base_size = 6
 		opcode_struct = Struct("<L")
 
 class Server(Peer):
 	hmac_key = unhexlify("22BEE5CFBB0764D900451BD024B8D545")
 	
 	class Header(BaseHeader):
-		size = 4
+		base_size = 4
 		opcode_struct = Struct("<H")
 
 class Connection(object):
@@ -277,7 +291,7 @@ class RealmConnection(Connection):
 			else:
 				# No header is pending; process the next one
 				
-				if len(self.buffer[source]) < source.Header.size:
+				if len(self.buffer[source]) < source.Header.base_size:
 					# Our buffer is too small to contain a header
 					return
 				
@@ -286,13 +300,15 @@ class RealmConnection(Connection):
 				if self.encrypted:
 					if self.rc4[source]:
 						header._data = self.rc4[source].decrypt(header._data)
+						if header.is_large:
+							header._data += self.rc4[source].decrypt(self.buffer[source][source.Header.base_size:source.Header.base_size+1])
 					else:
 						# The connection is encrypted, but we don't have a key
 						# to decrypt it. Nothing more to do here.
 						return
 				
 				self.header[source] = header
-				self.buffer[source] = self.buffer[source][source.Header.size:]
+				self.buffer[source] = self.buffer[source][header.size:]
 			
 			if source._halfstream.count == source._halfstream.count_new:
 				if (source is self.server and header.opcode != 0x1EC) or (source is self.client and header.opcode != 0x1ED):
