@@ -4,23 +4,9 @@ from operator import attrgetter
 from socket import inet_aton, inet_ntoa
 from struct import Struct, pack, unpack, error as StructError
 from time import time
+from utils import readstring
 
 import opcodes
-
-def readstring(data, offset=0):
-	"""Read a null-terminated string."""
-	if type(data) is str:
-		return data[offset:data.find(chr(0), offset)]
-	elif type(data) is StringIO:
-		result = ""
-		while True:
-			c = data.read(1)
-			if c == chr(0):
-				return result
-			elif c:
-				result += c
-			else:
-				break
 
 class SessionInfo(object):
 	type_code = 0x00
@@ -138,6 +124,7 @@ class Log(object):
 			return type_codes[type_code].unpack(data)
 	
 	def __iter__(self):
+		self._stream.seek(self.HEADER_SIZE)
 		while True:
 			next_item = self.next()
 			
