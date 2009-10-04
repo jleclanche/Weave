@@ -21,6 +21,7 @@ from utils import *
 import nids
 import hmac
 import os
+import re
 
 import opcodes
 import log
@@ -452,7 +453,7 @@ def findWowProcess():
 		except:
 			continue
 		
-		if cmdline.startswith("wow"):
+		if re.search(r"(/|wine\s+[.\/]*)?wow(\.exe)?", cmdline, re.IGNORECASE):
 			return int(entry)
 
 def main():
