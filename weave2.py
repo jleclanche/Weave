@@ -24,6 +24,7 @@ import os
 import re
 
 import opcodes
+import messages
 import log
 
 from events import stream
@@ -500,9 +501,9 @@ def main():
 					logfiles[connection] = logfile
 				
 				if message.source is connection.client:
-					cls = log.ClientMessage
+					cls = messages.ClientMessage
 				elif message.source is connection.server:
-					cls = log.ServerMessage
+					cls = messages.ServerMessage
 				else:
 					cls = None
 				

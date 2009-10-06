@@ -4,8 +4,9 @@ from operator import attrgetter
 from socket import inet_aton, inet_ntoa
 from struct import Struct, pack, unpack, error as StructError
 from time import time
-from utils import readstring
 
+from utils import readstring
+from messages import *
 import opcodes
 
 class SessionInfo(object):
@@ -35,43 +36,6 @@ class SessionInfo(object):
 	def __repr__(self):
 		return "<Session Info: %s %d.%d.%d (Build %d) %s, account = %s, client = %s:%d, server = %s:%d>" % (self.game, self.version[0], self.version[1], self.version[2], self.version[3], self.locale, self.account, self.client[0], self.client[1], self.server[0], self.server[1])
 
-class Message(object):
-	struct = Struct("<L4sH4sH")
-	
-	def __init__(self, opcode, client, server, data):
-		self.opcode = opcode
-		self.client = client
-		self.server = server
-		self.data = data
-
-	@classmethod
-	def unpack(cls, data):
-		opcode, client_ip, client_port, server_ip, server_port = Message.struct.unpack_from(data)
-		client = (inet_ntoa(client_ip), client_port)
-		server = (inet_ntoa(server_ip), server_port)
-		content = data[Message.struct.size:]
-		return cls(opcode, client, server, content)
-	
-	def pack(self):
-		client_ip, client_port = inet_aton(self.client[0]), self.client[1]
-		server_ip, server_port = inet_aton(self.server[0]), self.server[1]
-		
-		args = (self.opcode, client_ip, client_port, server_ip, server_port)
-		return self.struct.pack(*args) + self.data
-	
-	def __repr__(self):
-		name = opcodes.names[self.opcode]
-		
-		if len(self.data) > 0:
-			return "<%s: %d data bytes>" % (name, len(self.data))
-		else:
-			return "<%s>" % (name,)
-
-class ClientMessage(Message):
-	type_code = 0x01	
-
-class ServerMessage(Message):
-	type_code = 0x02
 
 type_codes = {
 	0x00: SessionInfo,
