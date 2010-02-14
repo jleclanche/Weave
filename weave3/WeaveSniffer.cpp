@@ -5,7 +5,7 @@
 #include "WeaveGameConnection.h"
 
 #include <string.h>
-#include <nids.h>
+#include <nids/nids.h>
 
 namespace Weave {
 	namespace Sniffer {

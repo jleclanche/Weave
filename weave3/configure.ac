@@ -2,7 +2,7 @@ AC_INIT(libweave, 3.0)
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
 AC_CHECK_HEADERS([sys/ptrace.h])
-AC_CHECK_HEADERS([nids.h], [], AC_MSG_ERROR(Could not find libnids headers))
+AC_CHECK_HEADERS([nids/nids.h], [], AC_MSG_ERROR(Could not find libnids headers))
 AC_CHECK_HEADERS([openssl/rc4.h], [], AC_MSG_ERROR(Could not find OpenSSL headers))
 AC_PROG_CXX
 AC_PROG_LIBTOOL
