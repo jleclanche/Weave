@@ -31,4 +31,5 @@ weave3_LDADD = libweave.a
 
 EXTRA_DIST = \
 	pyweave/setup.py \
-	pyweave/weavemodule.cpp
+	pyweave/weavemodule.cpp \
+	pyweave/tools/unpacklog.py
