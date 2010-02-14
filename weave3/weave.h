@@ -1,0 +1,6 @@
+#include "WeaveSniffer.h"
+#include "WeaveConnection.h"
+#include "WeaveBNetConnection.h"
+#include "WeaveGameConnection.h"
+#include "WeaveOpcodes.h"
+#include "WeaveLog.h"
