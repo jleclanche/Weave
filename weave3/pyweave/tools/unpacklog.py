@@ -11,6 +11,7 @@ messages with that opcode are extracted."""
 from __future__ import with_statement
 from weave import *
 from optparse import OptionParser
+from zlib import decompress
 import os
 
 def main():
@@ -50,7 +51,12 @@ def main():
 			msg_full_filename = os.path.join(outdir, msg_filename)
 			
 			with open(msg_full_filename, "wb") as msg_file:
-				msg_file.write(message.data)
+				if message.opcode == SMSG_COMPRESSED_UPDATE_OBJECT:
+					data = decompress(message.data[4:])
+				else:
+					data = message.data
+				
+				msg_file.write(data)
 			
 			print msg_full_filename
 
