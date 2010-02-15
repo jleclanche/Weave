@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <nids/nids.h>
+#include <nids.h>
 
 #include "WeaveCrypt.h"
 #include "WeaveOpcodes.h"

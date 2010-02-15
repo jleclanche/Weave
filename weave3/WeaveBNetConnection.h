@@ -1,7 +1,7 @@
 #ifndef WEAVE_BNETCONNECTION_H
 #define WEAVE_BNETCONNECTION_H
 
-#include <nids/nids.h>
+#include <nids.h>
 #include "WeaveConnection.h"
 
 namespace Weave {
