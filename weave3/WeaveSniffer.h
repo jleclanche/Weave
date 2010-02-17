@@ -8,6 +8,6 @@ namespace Weave {
 		
 		bool run(void);
 		bool next(void);
-		bool dispatch(int count);
+		int dispatch(int count);
 	};
 }

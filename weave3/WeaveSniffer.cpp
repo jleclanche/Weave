@@ -121,12 +121,15 @@ namespace Weave {
 			return initialized && (bool)nids_next();
 		}
 		
-		bool dispatch(int count)
+		int dispatch(int count)
 		{
 			if(!initialized)
 				initialize();
 			
-			return initialized && (bool)nids_dispatch(count);
+			if(initialized)
+				return nids_dispatch(count);
+			else
+				return 0;
 		}
 		
 	}

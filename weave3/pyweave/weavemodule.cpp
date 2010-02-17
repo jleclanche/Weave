@@ -88,6 +88,18 @@ static PyMemberDef PyWeave_SnifferMembers[] = {
 	{ 0 }
 };
 
+static PyObject* PyWeave_Sniffer_dispatch(PyWeave_SnifferObject* self, PyObject* pargs, PyObject* kwargs)
+{
+	long int count;
+	
+	if(PyArg_ParseTuple(pargs, "l", &count))
+	{
+		return PyInt_FromLong(Weave::Sniffer::dispatch(count));
+	}
+	
+	return NULL;
+}
+
 static PyObject* PyWeave_Sniffer_run(PyWeave_SnifferObject* self)
 {
 	bool capturingFromFile = (Weave::Sniffer::capture_file() != NULL);
@@ -112,7 +124,9 @@ static PyObject* PyWeave_Sniffer_next(PyWeave_SnifferObject* self)
 		Py_RETURN_FALSE;
 }
 
+
 static PyMethodDef PyWeave_SnifferMethods[] = {
+	{ "dispatch", (PyCFunction)PyWeave_Sniffer_dispatch, METH_VARARGS, NULL },
 	{ "run", (PyCFunction)PyWeave_Sniffer_run, METH_NOARGS, NULL },
 	{ "next", (PyCFunction)PyWeave_Sniffer_next, METH_NOARGS, NULL },
 	{ NULL }
