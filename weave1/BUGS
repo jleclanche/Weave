@@ -1,0 +1,11 @@
+- Occasionally, Weave crashes after decoding a few packets, displaying
+  the following error messages:
+    
+      weave: weave.c:558: msg_dump_all: Assertion `passes < 2048' failed.
+      Aborted
+  
+  This assertion is a precaution against an infinite loop which cannot 
+  be reliably reproduced so far.
+  
+  No solution or workaround is currently known, and Weave must be 
+  restarted after this bug occurs.

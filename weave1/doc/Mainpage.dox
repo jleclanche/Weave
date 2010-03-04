@@ -1,0 +1,150 @@
+﻿/** \mainpage
+\section Introduction
+Weave is a traffic sniffer and decrypter for World of Warcraft™. Its purpose
+is to watch for new game connections on the local network and to dump the
+data that is exchanged between the game client and the server.
+
+Weave focuses on cracking the encryption scheme that is used to obfuscate
+the packet headers. No further interpretation beyond what is necessary to
+gather the data required for decryption is done by this application. Such
+higher-level analysis is intentionally left to other, more specialized
+programs.
+
+\warning Weave will \em not help you crack passwords or gain access to other
+people's accounts. Authentication is done using a completely different
+mechanism which is much harder to crack. Weave is intended as an educational
+tool, not as a program for stealing accounts.
+
+\section System Requirements
+At the moment, Weave only compiles on UNIX-based systems such as Linux. It
+has been tested using Debian Linux 4.0, Ubuntu Linux 8.04 LTS and Ubuntu
+Linux 8.10 on both x86 and AMD64 architectures.
+
+\todo No testing has been done to ensure compatibility with big-endian
+machines. In its current state, Weave is unlikely to work
+correctly on big-endian machines due to a lack of testing.
+
+Compilation on Win32 has not been successful yet and is currently of a very
+low priority.
+
+You will need to install \em libpcap and \em libnids, along with their
+corresponding development packages (header files).
+
+Obviously, Weave requires a connection that it can sniff on. This can be 
+provided by running the game on the same machine that Weave is running on, or
+by sniffing a local, unswitched network for other machines running the game.
+In either case, it requires root privileges to set up the capture device.
+
+
+\section Installation
+To build Weave, the standard procedure of software installation on Linux can
+be applied:
+\code ./configure
+make
+\endcode
+If the configure script complains about the missing header files \e nids.h or
+\e pcap.h, or about not being able to link with libnids, it can't find the
+files of libpcap/libnids. Make sure you have them installed and/or tweak your
+configure parameters accordingly. Remember that you need the development files
+(headers) as well.
+
+Once compilation has been successful, you should find a new binary called
+\e weave in the source directory. You can either call this binary directly:
+\code sudo ./weave \endcode
+or, at your option, install it system-wide to the prefix that was given to
+configure (normally \e /usr/local/bin), using
+\code sudo make install \endcode
+
+\section Usage
+Using Weave should be rather straightforward. It does not have any command
+line options yet, though this feature has a high priority and is scheduled for
+one of the next versions.
+
+To put the network device into promiscuous mode, where it can sniff all
+traffic that is sent across the network, any application requires root
+privileges. Unfortunately, this means that you'll have to run Weave as root,
+too. This is a Linux security restriction.
+
+Once started, you should be presented with the following message:
+\verbatim Weave 0.2 - WoW Eavesdropper and Traffic Decrypter
+
+Setting up capture device "all" \endverbatim
+If there are no error messages, this means that Weave should now be able to
+sniff WoW traffic on your network.
+
+You can now log in to WoW. After your login attempt, Weave should be
+displaying the following message:
+\verbatim Recognized auth connection \endverbatim
+This message indicates that Weave has found a new connection to a login
+server and has successfully identified it as such. (It will not analyze it any
+further, however.)
+
+Depending on whether you're directed to the realm list or log in to your
+realm directly, the next message will be similar to the following:
+\verbatim Recognized game connection
+Server message: Opcode = 0x1EC (SMSG_AUTH_CHALLENGE) [6 data bytes] \endverbatim
+This indicates that you have attempted to log in to a game server, the actual
+server that is hosting the world and your characters. Since up to this point,
+the connection is not encrypted yet, you are also shown the opcode of the
+welcome message, along with the data payload.
+
+You will see another hex dump of a response by your client, which is, assuming that
+the game server accepted your request, followed by this message:
+\verbatim Connection is now encrypted
+Decryption of packets will be delayed until the full key is available \endverbatim
+What does this mean?
+
+The first thing that the client and the game server do after connecting is to
+negotiate about encryption. The client sends its session ID to the game server,
+which presumably checks back with the login server to establish a shared secret
+between the two parties. From that point, they continue their conversation over
+a seemingly secure connection, and Weave can no longer dump the packets
+directly.
+
+This encryption, however, is relatively easy to crack. Using a simple
+known-plaintext attack, Weave can obtain a key by sniffing 10 messages sent by
+the client, each giving 16 bits of the key, which is 160 bits long in total. (If
+you're interested in how this works, take a look at the cmsg_gather_key()
+function.)
+
+This process is indicated by a progress bar displaying the individual bytes of
+the session key. Depending on whether you're idling on the character selection
+screen or whether you've entered the world, it can take several minutes or a few
+seconds to complete, respectively.
+
+Eventually, this will lead to the following messages being displayed:
+\verbatim Key complete
+A dump of the packets that could not be decrypted until now follows \endverbatim
+At this point, Weave will dump all the packets that it has saved up until it
+could decrypt them.
+
+And that's it - from this point on, Weave will display each packet it captures,
+with the opcode, its textual representation and a hex dump of the packet's
+content.
+
+You can, for example, watch the client and the server play ping-pong:
+\verbatim Client message: Opcode = 0x1DC (CMSG_PING) [10 data bytes]
+[0000]   31 00 00 00 B6 00 00 00   FF FF                     1....... ..
+Server message: Opcode = 0x1DD (SMSG_PONG) [6 data bytes]
+[0000]   31 00 00 00 00 00 \endverbatim
+
+This should be enough to give you an idea of Weave's features. For a more
+in-depth analysis, it's not the right tool for the job, however. See the next
+section for more information.
+
+
+\section further-processing Further processing
+Weave is not designed to do anything but the basic decryption of the data stream
+between the two parties. Therefore, you need to perform high-level analysis of
+the packets using other tools, which can use Weave's decrypted packet dumps as
+their input.
+\todo This output of binary data has not yet been implemented.
+
+
+\section Development
+If you would like to take a look behind the scenes, have a look at the source
+files by clicking \em Files at the top. The source code should be fairly
+well-commented, and Doxygen's overviews will further help you delve into the
+code.
+
+*/

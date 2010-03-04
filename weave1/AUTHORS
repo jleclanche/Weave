@@ -1,0 +1,9 @@
+The author of Weave wishes to remain anonymous.
+
+The Weave project was inspired by the blog post "Sniffing World of Warcraft"
+at http://bonkel.wordpress.com/2008/03/31/sniffing-world-of-warcraft/
+
+The file "opcodes.h" is based on the file src/game/Opcodes.h from the MaNGOS
+Open Source MMORPG server, which is released under the terms of the GNU General
+Public License. See http://getmangos.com/ for further information on the MaNGOS
+Project.

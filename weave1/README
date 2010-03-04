@@ -1,0 +1,15 @@
+Please see the file doc/html/index.html for detailed instructions on how to
+install and use Weave.
+
+In case you did a checkout from version control and want to get up and 
+running for building Weave, you will need to install automake and 
+autoconf. Once they are installed, run these commands:
+
+    $ ./build-setup.sh
+    $ ./configure
+    $ make
+    $ sudo make install
+
+If Doxygen is installed, you can generate the documentation using:
+
+    $ doxygen Doxyfile

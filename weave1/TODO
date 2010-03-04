@@ -1,0 +1,8 @@
+- Binary output to files
+- Command line arguments
+- Stability and security checks
+- Error handling
+- Testing with malformed connections (BitTorrent?)
+- Win32 building
+- libweave
+- Write NEWS

@@ -1,0 +1,11 @@
+AC_INIT(Weave, 0.4)
+AC_CONFIG_SRCDIR(weave.c)
+AM_INIT_AUTOMAKE
+AM_CONFIG_HEADER(config.h)
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_CHECK_LIB(nids, nids_init, [], AC_MSG_ERROR(Could not link with libnids.))
+AC_CHECK_HEADERS([pcap.h], [], AC_MSG_ERROR(Could not find pcap.h. Please install the libpcap development package.))
+AC_CHECK_HEADERS([nids.h], [], AC_MSG_ERROR(Could not find nids.h. Please install the libnids development package.))
+AC_C_BIGENDIAN
+AC_OUTPUT(Makefile)
