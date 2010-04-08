@@ -16,7 +16,9 @@ namespace Weave {
 	
 	class MemoryKeyFinder : public KeyFinder {
 	protected:
-		static const unsigned int keyOffset = 0xF07;
+		static const unsigned int keyOffset = 0x504;
+		static const int keySearchRangeMin = -0xFFFF;
+		static const int keySearchRangeMax =  0xFFFF;
 	};
 
 }

@@ -1,4 +1,6 @@
 #include "WeaveWin32KeyFinder.h"
+#include <ios>
+#include <iostream>
 
 namespace Weave {
 
@@ -64,13 +66,19 @@ namespace Weave {
 
 	bool Win32FastKeyFinder::findKey(const GameConnection::Peer& peer, const GameConnection::Peer::Header& header, size_t messageSize, unsigned char** output)
 	{
-		if(!obtainDebugPrivileges())
+		std::cerr << "Trying to find the key using the Win32 fast key finder." << std::endl;
+		
+		if(!obtainDebugPrivileges()) {
+			std::cerr << "Could not obtain debug privileges." << std::endl;
 			return false;
-
+		}
+		
 		HANDLE hProcess = openWoWProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ);
-		if(!hProcess)
+		if(!hProcess) {
+			std::cerr << "Could not obtain a handle to the WoW process." << std::endl;
 			return false;
-
+		}
+		
 		const char* szAccountID = peer.connection.accountID();
 		const size_t nAccountIDLength = strlen(szAccountID);
 
@@ -89,18 +97,31 @@ namespace Weave {
 				BYTE* buffer = new BYTE[mbiMemoryInfo.RegionSize];
 				SIZE_T nBytesRead;
 
+				std::cerr << "\tReading memory region " << mbiMemoryInfo.BaseAddress;
+				std::cerr << ":" << ((int)mbiMemoryInfo.BaseAddress + mbiMemoryInfo.RegionSize) << "... ";
 				ReadProcessMemory(hProcess, mbiMemoryInfo.BaseAddress, (LPVOID)buffer, mbiMemoryInfo.RegionSize, &nBytesRead);
 
 				if(nBytesRead == mbiMemoryInfo.RegionSize)
 				{
-					for(int offset = 0; offset < nBytesRead - nAccountIDLength - keyOffset - Crypt::session_key_size; offset++)
+					std::cerr << "success." << std::endl;
+					
+					for(int offset = 0; offset < nBytesRead - nAccountIDLength - Crypt::session_key_size; offset++)
 					{
 						if(strcmp(szAccountID, (char*)buffer + offset) == 0)
 						{
+							std::cerr << "\t\tFound account ID at " << ((int)buffer + offset) << std::endl;
+							
+							if (offset + keyOffset < 0)
+								continue;
+							if (offset + keyOffset + Crypt::session_key_size > nBytesRead)
+								break;
+							
 							const unsigned char* presumedKey = buffer + offset + keyOffset;
-
+							
 							if(isValidKey(peer, header, messageSize, presumedKey))
 							{
+								std::cerr << "\t\tFound valid key at " << ((int)presumedKey) << " (" << ((int)buffer + offset) << " + " << keyOffset << ")" << std::endl;
+								
 								*output = (unsigned char*)malloc(Crypt::session_key_size);
 								memcpy(*output, presumedKey, Crypt::session_key_size);
 
@@ -111,6 +132,8 @@ namespace Weave {
 							}
 						}
 					}
+				} else {
+					std::cerr << "failed." << std::endl;
 				}
 
 				delete buffer;
@@ -120,17 +143,24 @@ namespace Weave {
 		}
 
 		CloseHandle(hProcess);
+		std::cerr << "Could not obtain a key using the Win32 fast key finder." << std::endl;
 		return false;
 	}
 
 	bool Win32ExhaustiveKeyFinder::findKey(const GameConnection::Peer& peer, const GameConnection::Peer::Header& header, size_t messageSize, unsigned char** output)
 	{
-		if(!obtainDebugPrivileges())
+		std::cerr << "Trying to find the key using the Win32 exhaustive key finder." << std::endl;
+		
+		if(!obtainDebugPrivileges()) {
+			std::cerr << "Could not obtain debug privileges." << std::endl;
 			return false;
-
+		}
+		
 		HANDLE hProcess = openWoWProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ);
-		if(!hProcess)
+		if(!hProcess) {
+			std::cerr << "Could not obtain a handle to the WoW process." << std::endl;
 			return false;
+		}
 
 		const char* szAccountID = peer.connection.accountID();
 		const size_t nAccountIDLength = strlen(szAccountID);
@@ -150,25 +180,45 @@ namespace Weave {
 				BYTE* buffer = new BYTE[mbiMemoryInfo.RegionSize];
 				SIZE_T nBytesRead;
 
+				std::cerr << "\tReading memory region " << std::ios::hex << mbiMemoryInfo.BaseAddress;
+				std::cerr << ":" << ((int)mbiMemoryInfo.BaseAddress + mbiMemoryInfo.RegionSize) << "... ";
 				ReadProcessMemory(hProcess, mbiMemoryInfo.BaseAddress, (LPVOID)buffer, mbiMemoryInfo.RegionSize, &nBytesRead);
 
 				if(nBytesRead == mbiMemoryInfo.RegionSize)
 				{
-					for(int offset = 0; offset < nBytesRead - Crypt::session_key_size; offset++)
+					std::cerr << "success." << std::endl;
+					
+					for(int offset = 0; offset < nBytesRead - nAccountIDLength - Crypt::session_key_size; offset++)
 					{
-						const unsigned char* presumedKey = buffer + offset;
-
-						if(isValidKey(peer, header, messageSize, presumedKey))
+						if(strcmp(szAccountID, (char*)buffer + offset) == 0)
 						{
-							*output = (unsigned char*)malloc(Crypt::session_key_size);
-							memcpy(*output, presumedKey, Crypt::session_key_size);
+							std::cerr << "\t\tFound account ID at " << ((int)buffer + offset) << std::endl;
+							
+							for(int keyOffset = keySearchRangeMin; keyOffset < keySearchRangeMax; keyOffset++) {
+								if (offset + keyOffset < 0)
+									continue;
+								if (offset + keyOffset + Crypt::session_key_size > nBytesRead)
+									break;
+								
+								const unsigned char* presumedKey = buffer + offset + keyOffset;
+								
+								if(isValidKey(peer, header, messageSize, presumedKey))
+								{
+									std::cerr << "\t\tFound valid key at " << ((int)presumedKey) << " (" << ((int)buffer + offset) << " + " << keyOffset << ")" << std::endl;
+									
+									*output = (unsigned char*)malloc(Crypt::session_key_size);
+									memcpy(*output, presumedKey, Crypt::session_key_size);
 
-							delete buffer;
+									delete buffer;
 
-							CloseHandle(hProcess);
-							return true;
+									CloseHandle(hProcess);
+									return true;
+								}
+							}
 						}
 					}
+				} else {
+					std::cerr << "failed." << std::endl;
 				}
 
 				delete buffer;
@@ -178,6 +228,7 @@ namespace Weave {
 		}
 
 		CloseHandle(hProcess);
+		std::cerr << "Could not obtain a key using the Win32 exhaustive key finder." << std::endl;
 		return false;
 	}
 
